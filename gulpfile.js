@@ -13,7 +13,8 @@ let gulp = require('gulp'),
   pug = require('gulp-pug'),
 	cssnano = require('gulp-cssnano'),
   sourcemaps = require('gulp-sourcemaps'),
-	uglify = require('gulp-uglify');
+	uglify = require('gulp-uglify'),
+  browserify = require('gulp-browserify');
 
 //==========================================================
 //= libs
@@ -80,22 +81,31 @@ gulp.task('browser-sync', function () {
 gulp.task("babel", function () {
   return gulp.src("src/es6/**/*.js")
     .pipe(babel())
-    .pipe(concat("scripts.js"))
-    .pipe(gulp.dest("src/js"))
+    .pipe(gulp.dest("src/js"));
+});
+
+//===========================================================
+//=   BROWSERIFY
+//===========================================================
+
+gulp.task('browserify',['babel'],()=>{
+  return gulp.src('src/js/main.js')
+    .pipe(browserify({}))
+    .pipe(rename('scripts.js'))
+		.pipe(gulp.dest('src/js'))
     .pipe(uglify())
     .pipe(rename({suffix:'.min'}))
-		.pipe(gulp.dest("src/js"))
-    .pipe(browserSync.reload({stream: true}));
+    .pipe(gulp.dest('src/js'));
 });
 
 //===========================================================
 //=  СЛЕЖЕНИЕ ЗА ИЗМЕНЕНИЕМ ФАЙЛОВ
 //===========================================================
 
-gulp.task('watch', ['browser-sync', 'babel', 'pug', 'libs'], function () {
+gulp.task('watch', ['browser-sync', 'browserify', 'pug', 'libs'], function () {
   gulp.watch('src/pug/**/*.pug', ['pug', browserSync.reload]);
   gulp.watch('src/sass/**/*.sass', ['sass',browserSync.reload]);
-  gulp.watch('src/es6/**/*.js', ['babel',browserSync.reload]);
+  gulp.watch('src/es6/**/*.js', ['browserify',browserSync.reload]);
   // gulp.watch('src/*.html', ['',browserSync.reload]);
 });
 
@@ -131,7 +141,7 @@ gulp.task('img', function () {
 //=  BUILD
 //===========================================================
 
-gulp.task('build', ['clean', 'img', 'sass', 'babel'], function () {
+gulp.task('build', ['clean', 'img', 'sass', 'browserify'], function () {
   let buildCss = gulp.src([
     'src/css/main.min.css',
     'src/css/libs.min.css'
